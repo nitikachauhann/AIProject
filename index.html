@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>📝 AI Task Scheduler</title>
+  <link href="https://fonts.googleapis.com/css2?family=Comic+Neue&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-light: linear-gradient(to bottom right, #fff7f0, #ffeefc);
+      --bg-dark: linear-gradient(to bottom right, #2a2a40, #1c1c2e);
+      --bg-aesthetic: linear-gradient(to bottom right, #f5e1fd, #cce5ff);
+      --text-light: #333;
+      --text-dark: #f0f0ff;
+    }
+
+    body {
+      font-family: 'Comic Neue', cursive;
+      background: var(--bg-light);
+      color: var(--text-light);
+      margin: 0;
+      padding: 20px;
+      transition: all 0.4s ease;
+    }
+
+    body.dark {
+      background: var(--bg-dark);
+      color: var(--text-dark);
+    }
+
+    body.aesthetic {
+      background: var(--bg-aesthetic);
+    }
+
+    h1 {
+      text-align: center;
+      color: #ff6b81;
+      font-size: 2.5rem;
+    }
+
+    .container {
+      max-width: 950px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    #theme-switcher {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 10px;
+    }
+
+    #theme-switcher select {
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: 2px solid #ffe0ea;
+      font-size: 1em;
+    }
+
+    form, .section {
+      background: #fff;
+      padding: 25px;
+      border-radius: 20px;
+      box-shadow: 0 8px 20px rgba(255, 192, 203, 0.2);
+      margin-bottom: 30px;
+    }
+
+    body.dark form, body.dark .section {
+      background: #34344e;
+      box-shadow: 0 4px 20px rgba(180, 170, 255, 0.3);
+    }
+
+    form label {
+      font-weight: bold;
+      margin-top: 12px;
+      display: block;
+      color: #cc5c7b;
+    }
+
+    input, select, button {
+      width: 100%;
+      margin: 8px 0;
+      padding: 12px;
+      border: 2px solid #ffe0ea;
+      border-radius: 15px;
+      box-sizing: border-box;
+      font-size: 1em;
+      background: #fffafc;
+    }
+
+    .time-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    .time-group input {
+      width: 100%;
+    }
+
+    button {
+      background: #ff8ba7;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #f26a8d;
+    }
+
+    .section h2 {
+      color: #ff6b81;
+      font-size: 1.6rem;
+      margin-top: 0;
+    }
+
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    li {
+      margin: 10px 0;
+      padding: 12px 16px;
+      border-radius: 15px;
+      background: #fff0f5;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 90%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .task-info {
+      flex: 1;
+      font-size: 0.9em;
+      color: #555;
+    }
+
+    .task-buttons {
+      display: flex;
+      gap: 6px;
+    }
+
+    .task-buttons button {
+      padding: 6px 10px;
+      font-size: 0.85em;
+      border-radius: 10px;
+      border: none;
+    }
+
+    .btn-done {
+      background: #d4fdd4;
+      color: #2b7a2b;
+    }
+
+    .btn-delete {
+      background: #ffd1dc;
+      color: #a33a4a;
+    }
+
+    #response {
+      margin-top: 10px;
+      font-weight: bold;
+      color: #ff6b81;
+      text-align: center;
+    }
+
+    #motivation {
+      text-align: center;
+      font-size: 1.1em;
+      margin-top: -15px;
+      color: #7a8dff;
+    }
+
+    /* New styles for dependencies and graph visualization */
+    .algorithm-info {
+      background: #f8f8ff;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      border-left: 4px solid #7a8dff;
+    }
+
+    body.dark .algorithm-info {
+      background: #3a3a58;
+    }
+
+    .algorithm-name {
+      font-weight: bold;
+      color: #7a8dff;
+    }
+
+    .dependency-list {
+      margin-top: 10px;
+      padding: 10px;
+      background: #f0f0ff;
+      border-radius: 8px;
+    }
+
+    body.dark .dependency-list {
+      background: #42425e;
+    }
+
+    .dependency-item {
+      padding: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .dependency-arrow {
+      color: #7a8dff;
+      margin: 0 10px;
+    }
+
+    #task-graph {
+  width: 100%;
+  height: 400px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin: 20px 0;
+  background: #f8f8ff;
+  overflow: auto;
+  position: relative; /* Add this line */
+}
+
+    body.dark #task-graph {
+      background: #2d2d45;
+      border-color: #444;
+    }
+
+    .graph-node {
+  padding: 8px 12px;
+  margin: 5px;
+  background: #ffd1dc;
+  border-radius: 8px;
+  position: absolute;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  font-size: 0.9em;
+  width: 130px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-sizing: border-box;
+  z-index: 5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+    .graph-edge {
+      position: absolute;
+      background: #7a8dff;
+      height: 2px;
+      transform-origin: 0 0;
+      pointer-events: none;
+    }
+
+    .algorithm-controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .algorithm-controls button {
+      flex: 1;
+      padding: 10px;
+      font-size: 0.9em;
+    }
+
+    .active-algorithm {
+      background: #7a8dff;
+    }
+
+    .dependency-section {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f0f8ff;
+      border-radius: 10px;
+    }
+
+    .dependency-selector {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .dependency-selector select {
+      flex: 1;
+    }
+
+    .btn-add-dependency {
+      width: auto;
+      background: #7a8dff;
+    }
+  </style>
+</head>
+<body>
+  <h1>📝 AI Task Scheduler</h1>
+  <div class="container">
+    <div id="theme-switcher">
+      <select id="theme-select">
+        <option value="light">🌞 Light</option>
+        <option value="dark">🌙 Dark</option>
+        <option value="aesthetic">🌈 Aesthetic</option>
+      </select>
+    </div>
+
+    <form id="task-form">
+      <label for="name">Task Name</label>
+      <input type="text" id="name" placeholder="e.g., Complete assignment" required>
+
+      <label>Estimated Time</label>
+      <div class="time-group">
+        <input type="number" id="estimated_time_hrs" placeholder="Hours" min="0" value="0" required>
+        <input type="number" id="estimated_time_mins" placeholder="Minutes" min="0" max="59" value="30" required>
+      </div>
+
+      <label for="status">Status</label>
+      <select id="status">
+        <option>Begin</option>
+        <option>Working</option>
+      </select>
+
+      <label for="priority">Priority</label>
+      <select id="priority">
+        <option>High</option>
+        <option>Medium</option>
+        <option>Low</option>
+      </select>
+
+      <div id="dependencies-container" style="display: none;">
+        <label>Depends on Tasks (Hold Ctrl to select multiple)</label>
+        <select id="task-dependencies" multiple style="height: 100px;">
+          <!-- Will be populated with tasks -->
+        </select>
+      </div>
+
+      <button type="submit">Add Task</button>
+      <p id="response"></p>
+    </form>
+
+    <div class="section">
+      <h2>🧠 AI Scheduling</h2>
+      <p>Choose an AI algorithm to optimize your task schedule:</p>
+      
+      <div class="algorithm-controls">
+        <button id="btn-algo-dfs" class="active-algorithm">DFS</button>
+        <button id="btn-algo-bfs">BFS</button>
+        <button id="btn-algo-topo">Topological Sort</button>
+        <button id="btn-algo-astar">A* Search</button>
+      </div>
+      
+      <div class="algorithm-info" id="algorithm-info">
+        <div class="algorithm-name">Depth-First Search (DFS)</div>
+        <p>Explores tasks along each branch to its full depth before backtracking</p>
+      </div>
+      
+      <h3>Task Graph Visualization</h3>
+      <div id="task-graph"></div>
+      
+      <div class="dependency-section">
+        <h3>Add Task Dependencies</h3>
+        <p>Select which tasks depend on others to create your dependency graph:</p>
+        
+        <div class="dependency-selector">
+          <select id="dependency-task">
+            <option value="">Select Task</option>
+          </select>
+          <div class="dependency-arrow">depends on →</div>
+          <select id="dependency-depends-on">
+            <option value="">Select Prerequisite Task</option>
+          </select>
+          <button class="btn-add-dependency" id="btn-add-dependency">Add Dependency</button>
+        </div>
+        
+        <div class="dependency-list" id="dependency-list">
+          <!-- Will be populated with dependencies -->
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>📋 Active Tasks (AI Optimized)</h2>
+      <ul id="task-list"></ul>
+    </div>
+
+    <div class="section">
+      <h2>✅ Completed Tasks</h2>
+      <ul id="done-list"></ul>
+      <p id="motivation"></p>
+    </div>
+  </div>
+
+  <script>
+    // Theme switching
+    const themes = {
+      light: "light",
+      dark: "dark",
+      aesthetic: "aesthetic"
+    };
+
+    document.getElementById("theme-select").addEventListener("change", function () {
+      document.body.className = "";
+      document.body.classList.add(this.value);
+    });
+
+    // Global state
+    let allTasks = [];
+    let dependencies = [];
+    let currentAlgorithm = "dfs";
+
+    // Form submission
+    document.getElementById("task-form").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const hours = parseInt(document.getElementById("estimated_time_hrs").value) || 0;
+      const minutes = parseInt(document.getElementById("estimated_time_mins").value) || 0;
+      const totalMinutes = hours * 60 + minutes;
+
+      // Get selected dependencies
+      const dependenciesSelect = document.getElementById("task-dependencies");
+      const selectedDependencies = Array.from(dependenciesSelect.selectedOptions).map(opt => parseInt(opt.value));
+
+      const task = {
+        name: document.getElementById("name").value,
+        estimated_time: totalMinutes,
+        status: document.getElementById("status").value,
+        priority: document.getElementById("priority").value,
+        dependencies: selectedDependencies
+      };
+
+      try {
+        const res = await fetch("http://localhost:3000/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(task),
+        });
+
+        const result = await res.json();
+        if (res.ok) {
+          document.getElementById("response").innerText = result.message || "Task added!";
+          document.getElementById("task-form").reset();
+          
+          // Reset default values
+          document.getElementById("estimated_time_hrs").value = "0";
+          document.getElementById("estimated_time_mins").value = "30";
+          
+          // Load data to refresh the view
+          await loadData();
+        } else {
+          document.getElementById("response").innerText = result.error || "Failed to add task";
+        }
+      } catch (error) {
+        document.getElementById("response").innerText = "❌ Failed to add task.";
+        console.error(error);
+      }
+    });
+
+    // Format time helper function
+    function formatTime(minutes) {
+      const h = Math.floor(minutes / 60);
+      const m = minutes % 60;
+      return `${h > 0 ? h + 'h ' : ''}${m}min`;
+    }
+
+    // Show motivational message
+    function showMotivation() {
+      const messages = [
+        "You're crushing it! 💪",
+        "Keep going, superstar! ✨",
+        "Every task done = one step closer 💼",
+        "Legendary progress 🐾",
+      ];
+      const msg = messages[Math.floor(Math.random() * messages.length)];
+      document.getElementById("motivation").innerText = msg;
+    }
+
+    // Load tasks and dependencies
+    async function loadData() {
+      try {
+        // Load tasks
+        const tasksRes = await fetch("http://localhost:3000/tasks");
+        allTasks = await tasksRes.json();
+        
+        // Load dependencies
+        const depsRes = await fetch("http://localhost:3000/dependencies");
+        dependencies = await depsRes.json();
+        
+        // Update dependencies selectors
+        updateDependencySelectors();
+        
+        // Update task dependencies select
+        updateTaskDependenciesSelect();
+        
+        // Load sorted tasks
+        loadSortedTasks();
+        
+        // Render dependency list
+        renderDependencies();
+        
+        // Render graph visualization
+        renderGraph();
+      } catch (error) {
+        console.error("Failed to load data:", error);
+        document.getElementById("response").innerText = "⚠️ Failed to load tasks.";
+      }
+    }
+
+    // Load sorted tasks based on current algorithm
+    async function loadSortedTasks() {
+      try {
+        const res = await fetch(`http://localhost:3000/tasks/sorted/${currentAlgorithm}`);
+        const data = await res.json();
+        
+        // Update algorithm info
+        document.querySelector(".algorithm-name").textContent = data.sortInfo.algorithm;
+        document.querySelector(".algorithm-info p").textContent = data.sortInfo.description;
+        
+        // Display cycle warning if applicable
+        if (data.sortInfo.hasCycle) {
+          document.querySelector(".algorithm-info").innerHTML += 
+            '<p style="color: #ff6b81">⚠️ Cycle detected in dependencies! Some tasks may not be shown.</p>';
+        }
+        
+        renderTasks(data.tasks);
+      } catch (error) {
+        console.error("Failed to load sorted tasks:", error);
+      }
+    }
+
+    // Render tasks to the UI
+    function renderTasks(tasks) {
+      const taskList = document.getElementById("task-list");
+      const doneList = document.getElementById("done-list");
+      taskList.innerHTML = "";
+      doneList.innerHTML = "";
+
+      tasks.forEach(task => {
+        const li = document.createElement("li");
+        const taskInfo = document.createElement("div");
+        taskInfo.className = "task-info";
+        taskInfo.innerHTML = `🕐 <strong>${task.name}</strong> &nbsp; ⏳ ${formatTime(task.estimated_time)} &nbsp; 🔺 ${task.priority}`;
+
+        const btnDelete = document.createElement("button");
+        btnDelete.className = "btn-delete";
+        btnDelete.innerText = "🗑️";
+        btnDelete.onclick = async () => {
+          await fetch(`http://localhost:3000/tasks/${task.id}`, { method: "DELETE" });
+          loadData();
+        };
+
+        const btnDone = document.createElement("button");
+        btnDone.className = "btn-done";
+        btnDone.innerText = "✅";
+        btnDone.onclick = async () => {
+          await fetch(`http://localhost:3000/tasks/${task.id}/done`, { method: "PUT" });
+          loadData();
+          showMotivation();
+        };
+
+        const buttonGroup = document.createElement("div");
+        buttonGroup.className = "task-buttons";
+        if (task.status !== "Done") buttonGroup.appendChild(btnDone);
+        buttonGroup.appendChild(btnDelete);
+        li.appendChild(taskInfo);
+        li.appendChild(buttonGroup);
+
+        if (task.status === "Done") {
+          doneList.appendChild(li);
+        } else {
+          taskList.appendChild(li);
+        }
+      });
+    }
+
+    // Update dependency selectors
+    function updateDependencySelectors() {
+      const taskSelect = document.getElementById("dependency-task");
+      const dependsOnSelect = document.getElementById("dependency-depends-on");
+      
+      // Clear existing options
+      taskSelect.innerHTML = '<option value="">Select Task</option>';
+      dependsOnSelect.innerHTML = '<option value="">Select Prerequisite Task</option>';
+      
+      // Add task options
+      allTasks.forEach(task => {
+        if (task.status !== "Done") {
+          const taskOption = document.createElement("option");
+          taskOption.value = task.id;
+          taskOption.textContent = task.name;
+          taskSelect.appendChild(taskOption.cloneNode(true));
+          dependsOnSelect.appendChild(taskOption);
+        }
+      });
+    }
+
+    // Update task dependencies select in the add task form
+    function updateTaskDependenciesSelect() {
+      const dependenciesSelect = document.getElementById("task-dependencies");
+      dependenciesSelect.innerHTML = "";
+      
+      // Show dependencies container if tasks exist
+      if (allTasks.length > 0) {
+        document.getElementById("dependencies-container").style.display = "block";
+      } else {
+        document.getElementById("dependencies-container").style.display = "none";
+        return;
+      }
+      
+      // Add task options
+      allTasks.forEach(task => {
+        if (task.status !== "Done") {
+          const option = document.createElement("option");
+          option.value = task.id;
+          option.textContent = task.name;
+          dependenciesSelect.appendChild(option);
+        }
+      });
+    }
+
+    // Render dependency list
+    function renderDependencies() {
+      const dependencyList = document.getElementById("dependency-list");
+      dependencyList.innerHTML = "";
+      
+      if (dependencies.length === 0) {
+        dependencyList.innerHTML = "<p>No dependencies defined yet.</p>";
+        return;
+      }
+      
+      dependencies.forEach(dep => {
+        const taskFrom = allTasks.find(t => t.id === dep.taskId);
+        const taskTo = allTasks.find(t => t.id === dep.dependsOn);
+        
+        if (taskFrom && taskTo) {
+          const item = document.createElement("div");
+          item.className = "dependency-item";
+          
+          item.innerHTML = `
+            <span>"${taskTo.name}"</span>
+            <span class="dependency-arrow">→</span>
+            <span>"${taskFrom.name}"</span>
+            <button class="btn-delete" style="width: auto;" id="del-dep-${dep.taskId}-${dep.dependsOn}">🗑️</button>
+          `;
+          
+          dependencyList.appendChild(item);
+          
+          // Add delete event listener
+          document.getElementById(`del-dep-${dep.taskId}-${dep.dependsOn}`).onclick = async () => {
+            try {
+              await fetch(`http://localhost:3000/dependencies?taskId=${dep.taskId}&dependsOn=${dep.dependsOn}`, {
+                method: "DELETE"
+              });
+              loadData();
+            } catch (error) {
+              console.error("Failed to delete dependency:", error);
+            }
+          };
+        }
+      });
+    }
+
+    // Add dependency event handler
+    document.getElementById("btn-add-dependency").addEventListener("click", async () => {
+      const taskId = document.getElementById("dependency-task").value;
+      const dependsOn = document.getElementById("dependency-depends-on").value;
+      
+      if (!taskId || !dependsOn || taskId === dependsOn) {
+        alert("Please select two different tasks for the dependency");
+        return;
+      }
+      
+      try {
+        const res = await fetch("http://localhost:3000/dependencies", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ taskId, dependsOn })
+        });
+        
+        const result = await res.json();
+        
+        if (res.ok) {
+          loadData();
+        } else {
+          alert(result.error || "Failed to add dependency");
+        }
+      } catch (error) {
+        console.error("Failed to add dependency:", error);
+        alert("Error adding dependency");
+      }
+    });
+
+    // Algorithm button event listeners
+    document.getElementById("btn-algo-dfs").addEventListener("click", () => switchAlgorithm("dfs"));
+    document.getElementById("btn-algo-bfs").addEventListener("click", () => switchAlgorithm("bfs"));
+    document.getElementById("btn-algo-topo").addEventListener("click", () => switchAlgorithm("topological"));
+    document.getElementById("btn-algo-astar").addEventListener("click", () => switchAlgorithm("astar"));
+
+    // Switch algorithm function
+    function switchAlgorithm(algorithm) {
+      currentAlgorithm = algorithm;
+      
+      // Update active button
+      document.querySelectorAll(".algorithm-controls button").forEach(btn => {
+        btn.classList.remove("active-algorithm");
+      });
+      document.getElementById(`btn-algo-${algorithm === "topological" ? "topo" : algorithm}`).classList.add("active-algorithm");
+      
+      // Reload tasks with new algorithm
+      loadSortedTasks();
+    }
+
+    // Render graph visualization
+function renderGraph() {
+  const graphContainer = document.getElementById("task-graph");
+  graphContainer.innerHTML = "";
+  
+  if (allTasks.length === 0) {
+    graphContainer.innerHTML = "<p style='padding: 20px; text-align: center;'>Add tasks to visualize the dependency graph</p>";
+    return;
+  }
+  
+  // Improved position calculation with more space
+  const nodeWidth = 130;
+  const nodeHeight = 50;
+  const horizontalSpacing = 220;  // Increased spacing horizontally
+  const verticalSpacing = 120;    // Increased spacing vertically
+  const padding = 40;             // More padding
+  
+  // Create a graph layout
+  const maxNodesPerRow = 3;       // Fewer nodes per row for less clutter
+  const nodes = {};
+  
+  // Calculate container dimensions
+  const rows = Math.ceil(allTasks.length / maxNodesPerRow);
+  const containerHeight = Math.max(400, rows * verticalSpacing + 100);
+  const containerWidth = Math.max(graphContainer.offsetWidth, maxNodesPerRow * horizontalSpacing);
+  
+  graphContainer.style.height = containerHeight + "px";
+  graphContainer.style.minWidth = containerWidth + "px";
+  
+  // Create nodes
+  allTasks.forEach((task, index) => {
+    const row = Math.floor(index / maxNodesPerRow);
+    const col = index % maxNodesPerRow;
+    
+    const nodeEl = document.createElement("div");
+    nodeEl.className = "graph-node";
+    nodeEl.textContent = task.name;
+    nodeEl.style.position = "absolute";
+    nodeEl.style.width = nodeWidth + "px";
+    nodeEl.style.height = nodeHeight + "px";
+    nodeEl.style.display = "flex";
+    nodeEl.style.alignItems = "center";
+    nodeEl.style.justifyContent = "center";
+    nodeEl.style.textAlign = "center";
+    nodeEl.style.padding = "8px";
+    nodeEl.style.boxSizing = "border-box";
+    nodeEl.style.zIndex = "5"; // Ensure nodes appear above edges
+    
+    // Position nodes
+    const left = col * horizontalSpacing + padding;
+    const top = row * verticalSpacing + padding;
+    
+    nodeEl.style.left = left + "px";
+    nodeEl.style.top = top + "px";
+    nodeEl.dataset.id = task.id;
+    
+    // Color based on priority
+    if (task.priority === "High") {
+      nodeEl.style.backgroundColor = "#ffb6c1";
+    } else if (task.priority === "Medium") {
+      nodeEl.style.backgroundColor = "#ffe0b2";
+    } else {
+      nodeEl.style.backgroundColor = "#e0f7fa";
+    }
+    
+    // Border style based on status
+    if (task.status === "Done") {
+      nodeEl.style.border = "2px solid #4caf50";
+    } else if (task.status === "Working") {
+      nodeEl.style.border = "2px solid #ff9800";
+    } else {
+      nodeEl.style.border = "2px solid #ddd";
+    }
+    
+    graphContainer.appendChild(nodeEl);
+    
+    // Store node position data
+    nodes[task.id] = {
+      element: nodeEl,
+      left: left,
+      top: top,
+      width: nodeWidth,
+      height: nodeHeight,
+      centerX: left + nodeWidth / 2,
+      centerY: top + nodeHeight / 2
+    };
+  });
+  
+  // Draw edges between nodes after all nodes are positioned
+  dependencies.forEach(dep => {
+    const fromNode = nodes[dep.dependsOn]; // Source of dependency
+    const toNode = nodes[dep.taskId];      // Target of dependency
+    
+    if (fromNode && toNode) {
+      drawEdge(fromNode, toNode, graphContainer);
+    }
+  });
+}
+
+// Helper function to draw an edge between nodes
+function drawEdge(fromNode, toNode, container) {
+  // Calculate connection points at edges of rectangles instead of centers
+  // This ensures arrows don't overlap with text
+  
+  // Determine which side to connect based on relative positions
+  let startX, startY, endX, endY;
+  
+  // Horizontal difference is greater than vertical difference
+  if (Math.abs(fromNode.centerX - toNode.centerX) > Math.abs(fromNode.centerY - toNode.centerY)) {
+    // fromNode is to the left of toNode
+    if (fromNode.centerX < toNode.centerX) {
+      startX = fromNode.left + fromNode.width;
+      startY = fromNode.centerY;
+      endX = toNode.left;
+      endY = toNode.centerY;
+    } else {
+      // fromNode is to the right of toNode
+      startX = fromNode.left;
+      startY = fromNode.centerY;
+      endX = toNode.left + toNode.width;
+      endY = toNode.centerY;
+    }
+  } else {
+    // fromNode is above toNode
+    if (fromNode.centerY < toNode.centerY) {
+      startX = fromNode.centerX;
+      startY = fromNode.top + fromNode.height;
+      endX = toNode.centerX;
+      endY = toNode.top;
+    } else {
+      // fromNode is below toNode
+      startX = fromNode.centerX;
+      startY = fromNode.top;
+      endX = toNode.centerX;
+      endY = toNode.top + toNode.height;
+    }
+  }
+  
+  // Calculate vector and distance
+  const dx = endX - startX;
+  const dy = endY - startY;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  
+  // Create edge element
+  const edge = document.createElement("div");
+  edge.className = "graph-edge";
+  edge.style.position = "absolute";
+  edge.style.width = distance + "px";
+  edge.style.height = "2px";
+  edge.style.backgroundColor = "#7a8dff";
+  edge.style.left = startX + "px";
+  edge.style.top = startY + "px";
+  edge.style.zIndex = "1"; // Ensure edges appear below nodes
+  
+  // Calculate angle
+  const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+  edge.style.transformOrigin = "left center";
+  edge.style.transform = `rotate(${angle}deg)`;
+  
+  // Add arrowhead
+  const arrow = document.createElement("div");
+  arrow.style.position = "absolute";
+  arrow.style.right = "0";
+  arrow.style.top = "-4px";
+  arrow.style.width = "0";
+  arrow.style.height = "0";
+  arrow.style.borderTop = "4px solid transparent";
+  arrow.style.borderBottom = "4px solid transparent";
+  arrow.style.borderLeft = "8px solid #7a8dff";
+  
+  edge.appendChild(arrow);
+  container.appendChild(edge);
+}
+
+    // Initial data load
+    loadData();
+  </script>
+</body>
+</html>
